@@ -1,0 +1,46 @@
+<div class="container">
+  <div class="row">
+    <div class="col-md-12">
+		<table id="attendeeTable" class="table table-hover">
+		  <thead>
+		    <tr>
+		      <th>Name</th>
+		      <th>Shirt</th>
+		      <th>Type</th>
+		      <th>Room</th>
+		      <th>Donation</th>
+		      <th>Cost</th>
+		      <th></th>
+		      <th></th>
+		    </tr>
+		  </thead>
+		  <tbody>
+		  	{{#each attendees}}
+		  		<tr class='clickableRow'>
+		  			<td>{{fullName this}}</td>
+		  			<td>{{shirt}}</td>
+		  			<td>{{ageClass}}</td>
+		  			<td>{{room}}</td>
+		  			<td>{{donation}}</td>
+		  			<td>{{cost}}</td>
+			    	<td><span class="glyphicon glyphicon-pencil"></span></td>
+			    	<td><span class="glyphicon glyphicon-trash"></span></td>
+		  		</tr>
+		  	{{/each}} 
+		  </tbody>
+		  <thead>
+		    <tr>
+		      <th>Total</th>
+		      <th></th>
+		      <th></th>
+		      <th></th>
+		      <th></th>
+		      <th></th>
+		      <th></th>
+		      <th></th>
+		    </tr>
+		  </thead>		  
+		</table>    	
+    </div> 
+  </div>
+</div>
