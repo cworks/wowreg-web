@@ -1385,7 +1385,7 @@
             }
         }        
 
-        return $target.val("$ " + val);
+        return $target.val("$" + val);
     };
  
     /**

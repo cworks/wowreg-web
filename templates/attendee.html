@@ -1,177 +1,204 @@
-<form id="wowForm" onsubmit="return false;" >
-<div id="attendeeForm" class="container {{attendeeColorClass}}">
-  <div class="row">
-    <div class="col-md-6">
-      <div class="form-group has-feedback">
-        <label class="control-label" for="wowFirstName">First Name&nbsp;*</label>
-        <input type="text" class="form-control" id="wowFirstName"
-          tabindex="1"
-          maxLength="48"
-          placeholder="Enter First Name"
-          value="{{firstName}}"> 
-        <span class="glyphicon form-control-feedback"></span>            
-      </div>
-    </div> 
-    <div class="col-md-6">
-      <div class="form-group has-feedback">
-        <label class="control-label" for="wowAddress">Address&nbsp;*</label>
-        <input type="text" class="form-control" id="wowAddress"
-          tabindex="5"
-          placeholder="Enter Address"
-          value="{{address}}">
-        <span class="glyphicon form-control-feedback"></span>            
-      </div>
-    </div>        
-  </div>
-  <div class="row">
-    <div class="col-md-6">
-      <div class="form-group has-feedback">
-        <label class="control-label" for="wowLastName">Last Name&nbsp;*</label>
-        <input type="text" class="form-control"
-          id="wowLastName"
-          tabindex="2"
-          maxLength="48"
-          placeholder="Enter Last Name"
-          value="{{lastName}}">
-        <span class="glyphicon form-control-feedback"></span>
-      </div>
-    </div>  
-    <div class="col-md-4">
-      <div class="form-group has-feedback">
-        <label class="control-label" for="wowZipCode">Zipcode&nbsp;*</label>
-        <input type="text" class="form-control"
-          id="wowZipCode"
-          tabindex="6"
-          data-formance_length="5"
-          maxLength="5"
-          placeholder="Enter Zipcode"
-          value="{{zip}}">
-        <span class="glyphicon form-control-feedback"></span>            
-      </div>  
-    </div>
-  </div>
-  <div class="row">
-    <div class="col-md-6">
-      <div class="form-group has-feedback">
-        <label class="control-label" for="wowEmail">Email&nbsp;*</label>
-        <input type="email" class="email form-control" id="wowEmail"
-          tabindex="3"
-          data-formance_algorithm="complex"
-          placeholder="you@somewhere.com"
-          value="{{email}}">          
-        <span class="glyphicon form-control-feedback"></span>
-      </div>
-    </div>  
-    <div class="col-md-6">
-      <div class="form-group has-feedback">
-        <label class="control-label" for="wowCity">City&nbsp;*</label>
-        <input type="text" class="form-control"
-          id="wowCity"
-          tabindex="7"
-          placeholder="Enter City"
-          value="{{city}}">
-        <span class="glyphicon form-control-feedback"></span>
-      </div>
-    </div>             
-  </div>
-  <div class="row">
-    <div class="col-md-4">
-      <div class="form-group has-feedback">
-        <label class="control-label" for="wowPhone">Phone&nbsp;*</label>
-        <input type="text" class="phone form-control"
-          id="wowPhone"
-          tabindex="4"
-          placeholder="(###) ###-####"
-          value="{{phone}}">
-        <span class="glyphicon form-control-feedback"></span>
-      </div>
-    </div>    
-    <div class="col-md-2"></div>
-    <div class="col-md-4">
-      <div id="wowStateTypeahead">    
-        <div class="form-group has-feedback">        
-          <label class="control-label" for="wowState">State&nbsp;*</label>            
-          <input id="wowState" class="typeahead form-control"
-            type="text"
-            tabindex="8"
-            placeholder="Enter State"
-            value="{{state}}">
-          <span class="glyphicon form-control-feedback"></span>              
+<form id="wowForm" onsubmit="return false;">
+<div id="attendeeForm" class="container">
+    <input type="hidden" id="wowAttendeeId" name="wowAttendeeId" value="{{attendeeId}}">
+
+    <div class="row">
+        <div class="col-md-6">
+            <div id='wowFirstNameWidget' class="form-group has-feedback">
+                <label class="control-label" for="wowFirstName">First Name&nbsp;*</label>
+                <input type="text" class="form-control" id="wowFirstName"
+                       tabindex="1"
+                       maxLength="48"
+                       placeholder="Enter First Name"
+                       value="{{firstName}}">
+                <span class="glyphicon form-control-feedback"></span>
+            </div>
         </div>
-      </div>
-    </div>             
-  </div>
-  <div class="row">
-    <div class="col-md-4">
-      <div id="wowAgeClassTypeahead">    
-        <div class="form-group has-feedback">        
-          <label class="control-label" for="wowAgeClass">Adult or Teen?&nbsp;*</label>            
-          <input id="wowAgeClass" class="typeahead form-control"
-            type="text"
-            tabindex="9"
-            placeholder="Adult or Teen?"
-            value="{{ageClass}}">
-          <span class="glyphicon form-control-feedback"></span>              
+        <div class="col-md-6">
+            <div id='wowAddressWidget' class="form-group has-feedback">
+                <label class="control-label" for="wowAddress">Address {{#if poc}}&nbsp;* {{/if}}</label>
+                <input type="text" class="form-control" id="wowAddress"
+                       tabindex="6"
+                       placeholder="Enter Address"
+                       value="{{address}}">
+                <span class="glyphicon form-control-feedback"></span>
+            </div>
         </div>
-      </div>
-    </div>  
-    <div class="col-md-2"></div>
-    <div class="col-md-4">
-      <div id="wowShirtTypeahead">    
-        <div class="form-group has-feedback">        
-          <label class="control-label" for="wowShirt">Shirt&nbsp;*</label>            
-          <input id="wowShirt" class="typeahead form-control"
-            type="text"
-            tabindex="10"
-            placeholder="None"
-            value="{{shirt}}">
-          <span class="glyphicon form-control-feedback"></span>              
+    </div>
+    <div class="row">
+        <div class="col-md-6">
+            <div id='wowLastNameWidget' class="form-group has-feedback">
+                <label class="control-label" for="wowLastName">Last Name&nbsp;*</label>
+                <input type="text" class="form-control"
+                       id="wowLastName"
+                       tabindex="2"
+                       maxLength="48"
+                       placeholder="Enter Last Name"
+                       value="{{lastName}}">
+                <span class="glyphicon form-control-feedback"></span>
+            </div>
         </div>
-      </div>
-    </div>             
-  </div>  
-  <div class="row">
-    <div class="col-md-4">
-      <div class="form-group has-feedback">
-        <label class="control-label" for="wowDonation">
-          Donation
-        </label>
-        <!--
-          This money field is limited to a value of 100, text length of 5
-          because we account for the dollar sign and space before money amount
-          -->
-        <input type="text" class="form-control" id="wowDonation"
-          data-formance_max=100 maxlength="5"
-          tabindex="10"
-          placeholder="$ 0"
-          data-toggle="tooltip"
-          data-placement="right"
-          title="We appreciate you!"
-          value="{{donation}}"
-        >
-        <span class="glyphicon form-control-feedback"></span>
-      </div>
-    </div> 
-  </div>
-  <div class="row">
-    <div class="col-md-2">
-      <button id="prevButton" type="button" class="btn btn-default">Prev</button>                
+        <div class="col-md-6">
+
+            <div id='wowCityWidget' class="form-group has-feedback">
+                <label class="control-label" for="wowCity">City{{#if poc}}&nbsp;*{{/if}}</label>
+                <input type="text" class="form-control"
+                       id="wowCity"
+                       tabindex="7"
+                       placeholder="Enter City"
+                       value="{{city}}">
+                <span class="glyphicon form-control-feedback"></span>
+            </div>
+
+
+        </div>
     </div>
-    <div class="col-md-2">
-    </div>         
-    <div class="col-md-1">
-    </div>    
-    <div class="col-md-2">
-      <button id="addAttendeeButton" type="button" class="btn btn-default">Add Lady</button>        
+    <div class="row">
+        <div class="col-md-6">
+
+            <div id='wowEmailWidget' class="form-group has-feedback">
+                <label class="control-label" for="wowEmail">Email&nbsp;*</label>
+                <input type="email" class="email form-control" id="wowEmail"
+                       tabindex="3"
+                       data-formance_algorithm="complex"
+                       placeholder="you@somewhere.com"
+                       value="{{email}}">
+                <span class="glyphicon form-control-feedback"></span>
+            </div>
+
+
+        </div>
+        <div class="col-md-4">
+            <div id="wowStateTypeahead">
+                <div id='wowStateWidget' class="form-group has-feedback">
+                    <label class="control-label" for="wowState">State{{#if poc}}&nbsp;*{{/if}}</label>
+                    <input id="wowState" class="typeahead form-control"
+                           type="text"
+                           tabindex="8"
+                           placeholder="Enter State"
+                           value="{{state}}">
+                    <span class="glyphicon form-control-feedback"></span>
+                </div>
+            </div>
+
+        </div>
     </div>
-    <div class="col-md-1">
-    </div>    
-    <div class="col-md-2">
-    </div> 
-    <div class="col-md-2">
-      <button id="nextButton" type="button" class="btn btn-default">Next</button>                
-    </div>         
-  </div> 
+    <div class="row">
+        <div class="col-md-4">
+
+            <div id="wowShirtTypeahead">
+                <div id='wowShirtWidget' class="form-group has-feedback">
+                    <label class="control-label" for="wowShirt">Shirt&nbsp;*</label>
+                    <input id="wowShirt" class="typeahead form-control"
+                           type="text"
+                           tabindex="4"
+                           placeholder="None"
+                           value="{{shirt}}">
+                    <span class="glyphicon form-control-feedback"></span>
+                </div>
+            </div>
+
+        </div>
+        <div class="col-md-2"></div>
+        <div class="col-md-4">
+            <div id='wowZipCodeWidget' class="form-group has-feedback">
+                <label class="control-label" for="wowZipCode">Zipcode{{#if poc}}&nbsp;*{{/if}}</label>
+                <input type="text" class="form-control"
+                       id="wowZipCode"
+                       tabindex="9"
+                       data-formance_length="5"
+                       maxLength="5"
+                       placeholder="Enter Zipcode"
+                       value="{{zip}}">
+                <span class="glyphicon form-control-feedback"></span>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-4">
+
+            <div id="wowAgeClassTypeahead">
+                <div id='wowAgeClassWidget' class="form-group has-feedback">
+                    <label class="control-label" for="wowAgeClass">Adult or Teen?&nbsp;*</label>
+                    <input id="wowAgeClass" class="typeahead form-control"
+                           type="text"
+                           tabindex="5"
+                           placeholder="Adult or Teen?"
+                           value="{{ageClass}}">
+                    <span class="glyphicon form-control-feedback"></span>
+                </div>
+            </div>
+
+        </div>
+        <div class="col-md-2"></div>
+        <div class="col-md-4">
+            <div id="wowPhoneWidget" class="form-group has-feedback">
+                <label class="control-label" for="wowPhone">Phone{{#if poc}}&nbsp;*{{/if}}</label>
+                <input type="text" class="phone form-control"
+                       id="wowPhone"
+                       tabindex="10"
+                       placeholder="(###) ###-####"
+                       value="{{phone}}">
+                <span class="glyphicon form-control-feedback"></span>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-4">
+
+        </div>
+        <div class='col-md-2'></div>
+        <div class='col-md-4'>
+
+            <div id='wowDonationWidget' class="form-group has-feedback">
+                <label class="control-label" for="wowDonation">
+                    Donation
+                </label>
+                <!--
+                  This money field is limited to a value of 100, text length of 5
+                  because we account for the dollar sign and space before money amount
+                  -->
+                <input type="text" class="form-control" id="wowDonation"
+                       data-formance_max=100 maxlength="5"
+                       tabindex="11"
+                       placeholder="$0"
+                       data-toggle="tooltip"
+                       data-placement="right"
+                       title="We appreciate you!"
+                       value="{{donation}}"
+                        >
+                <span class="glyphicon form-control-feedback"></span>
+            </div>
+
+            <!--
+            <div id='wowPocWidget' class="checkbox">
+                <label>
+                    <input type="checkbox" name="pocCheckbox" id="wowPoc" "{{#if poc}} checked {{/if}}">
+                    Select if attendee is paying for this group
+                </label>
+            </div>
+            -->
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-2">
+            <button id="prevButton" type="button" class="btn btn-default">Prev</button>
+        </div>
+        <div class="col-md-2">
+        </div>
+        <div class="col-md-1">
+        </div>
+        <div class="col-md-2">
+            <button id="addAttendeeButton" type="button" class="btn btn-default">Add Lady</button>
+        </div>
+        <div class="col-md-1">
+        </div>
+        <div class="col-md-2">
+        </div>
+        <div class="col-md-2">
+            <button id="nextButton" type="button" class="btn btn-default">Next</button>
+        </div>
+    </div>
 </div>
 </form>
 

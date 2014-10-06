@@ -1,10 +1,7 @@
-/*global jQuery, Handlebars, _, localStorage */
+/*global jQuery, Handlebars, _, TAFFY */
 jQuery(function($) {
 
 	'use strict';
-
-	//var _ = (_ === 'undefined') ? {} : _;
-	//var localStorage = (localStorage === 'undefined') ? {} : localStorage;
 
 	/*
 	 * Handlebar helpers that tweak data in the model for view specific purposes
@@ -88,7 +85,7 @@ jQuery(function($) {
 				cb(matches);
 			}
 		};
-	};	
+	};
 
 	/*
 	 * Convert a template into HTML
@@ -107,7 +104,7 @@ jQuery(function($) {
 
 				$.ajax({
 					url: templateUrl,
-					async: false,
+					async: false
 					}).done(function(data) {
 						templateString = data;
 					});
@@ -193,20 +190,6 @@ jQuery(function($) {
 	}());
 
 	/*
-	 * localStorage for attendees kept in memory
-	 */
-	var WowDb = {
-		store: function (namespace, data) {
-			if (arguments.length > 1) {
-				return localStorage.setItem(namespace, JSON.stringify(data));
-			} else {
-				var store = localStorage.getItem(namespace);
-				return (store && JSON.parse(store)) || [];
-			}
-		}
-	};
-
-	/*
 	 * Main WowReg application
 	 */
 	var App = {
@@ -217,32 +200,15 @@ jQuery(function($) {
 			console.log('initializing wowregapp');
 			this.initModel();
 			this.cacheElements();
-			this.reRender();
+			this.render();
 		},
 
 		/*
 		 * initialize model
 		 */
 		initModel: function() {
-			this.attendees = WowDb.store('wowreg-attendees');
-			while(this.attendees.length > 0) {
-			    this.attendees.pop();
-			}
-			this.attendees.unshift({
-				firstName: '',
-				lastName: '',
-				poc: false,
-				address: '',
-				city: '',
-				state: '',
-				zip: '',
-				email: '',
-				phone: '',
-				ageClass: '',
-				donation: '',
-				shirt: ''
-			});			
-			this.attendeePointer = 0;
+			this.attendeeDb = TAFFY();
+			this.attendeeId = 1;
 		},
 
 		cacheElements: function() {
@@ -261,7 +227,7 @@ jQuery(function($) {
 			this.$wowApp = $('#wowapp');
 			this.$headerSection  = this.$wowApp.find('#header-section');
 			this.$attendeeForm   = this.$wowApp.find('#attendee-form');
-			this.$registeredForm = this.$wowApp.find('#registered-form');
+			this.$registeredTable = this.$wowApp.find('#registered-form');
 			this.$footerSection  = this.$wowApp.find('#footer-section');
 			this.$header = this.$wowApp.find('#header');
 			this.$main   = this.$wowApp.find('#main');
@@ -269,7 +235,10 @@ jQuery(function($) {
 			this.feedback = '';
 		},
 
-		bindEvents: function() {
+		/*
+		 * bind event sources and handlers together for attendeeForm
+		 */
+		bindAttendeeFormEvents: function() {
 
 			this.$attendeeForm.find('#wowStateTypeahead .typeahead').typeahead({
 					hint: true,
@@ -341,7 +310,8 @@ jQuery(function($) {
 			    ev.keyCode = ev.which = 40;
 			    $(this).trigger(ev);
 			    return true;
-			});			
+			});
+
 			this.$attendeeForm.find('#wowFirstName')
 				.on('keyup change blur', function() {
 			    	var $this = $(this);
@@ -536,69 +506,210 @@ jQuery(function($) {
 				      	}
 				    );				
 				}
-			);				
+			);
+
+            this.$attendeeForm.find('#wowPoc')
+                .on('change', this.pocChanged.bind(this));
 
 			this.$attendeeForm.find('#prevButton')
 				.on('click', this.previousAttendee.bind(this));
 
 			this.$attendeeForm.find('#addAttendeeButton')
-				.on('click', this.createAttendee.bind(this));
+				.on('click', this.addAttendee.bind(this));
 
 			this.$attendeeForm.find('#nextButton')
 				.on('click', this.nextAttendee.bind(this));
-
-		    this.$registeredForm.find('.clickableRow')
-		    	.on('click', function() {
-		    		console.info('clicked a row');
-		    	});
 
 			$('[data-toggle=tooltip]').tooltip();
 		},
 
 		/*
+		 * bind event source and handlers together for attendeeTable
+		 */
+		bindAttendeeTableEvents: function() {
+
+            this.$registeredTable.find('.clickableRow [id*=edit-]')
+                .on('click', this.editAttendee.bind(this));
+
+            this.$registeredTable.find('.clickableRow [id*=trash-]')
+                .on('click', this.removeAttendee.bind(this));
+
+		},
+
+		/*
+		 * Check if adding this attendee is okay according to the business rules,
+		 * this includes input data validation and actual core business rules
+		 * defined by the wowconf folks.
+		 */
+		passBusinessRules: function(attendee) {
+            var problemWidgets = [];
+			if(!attendee) {
+				return false;
+			}
+
+            if(attendee.poc === true) {
+                // enforce all fields
+                problemWidgets = this.hasError([
+                    '#wowFirstNameWidget', '#wowLastNameWidget', '#wowEmailWidget',
+                    '#wowPhoneWidget', '#wowAgeClassWidget', '#wowAddressWidget',
+                    '#wowZipCodeWidget', '#wowCityWidget', '#wowStateWidget',
+                    '#wowShirtWidget'
+                ]);
+
+            } else {
+                // enforce just the core fields
+                problemWidgets = this.hasError([
+                    '#wowFirstNameWidget', '#wowLastNameWidget', '#wowEmailWidget',
+                    '#wowAgeClassWidget', '#wowShirtWidget'
+                ]);
+            }
+
+            for(var i = 0; i < problemWidgets.length; i++) {
+                problemWidgets[i].children('.glyphicon').addClass('glyphicon-remove');
+
+            }
+
+			return problemWidgets.length > 0 ? false : true;
+		},
+
+        emptyOrError: function(widgetId) {
+            if(this.$attendeeForm.find(widgetId).hasClass('has-error')===true) {
+                return true;
+            }
+            if(
+                (this.$attendeeForm.find(widgetId).hasClass('has-error')===false) &&
+                (this.$attendeeForm.find(widgetId).hasClass('has-success')===false)
+              ) {
+                // when nothing has been entered into wowFirstName then widget
+                // will not have has-error or has-success classes
+                return true;
+            }
+
+            return false;
+        },
+
+        hasError: function(widgets) {
+            var problemWidgets = [];
+            for(var i = 0; i < widgets.length; i++) {
+                if(this.emptyOrError(widgets[i])===true) {
+                    problemWidgets.push(this.$attendeeForm.find(widgets[i]));
+                }
+            }
+            return problemWidgets;
+        },
+
+        /**
+         * Compute cost for given attendee.
+         * @param attendee
+         */
+        computeCost: function(attendee) {
+            var cost = 0;
+            if(attendee.shirt === 'None') {
+                attendee.shirtCost = null;
+            } else {
+                attendee.shirtSize = attendee.shirt.slice(0, attendee.shirt.length-3).trim();
+                attendee.shirtCost = parseInt(attendee.shirt.slice(-2));
+                cost += attendee.shirtCost;
+            }
+            if(isNaN(parseInt(attendee.donation.slice(1).trim()))===false) {
+                attendee.donationCost = parseInt(attendee.donation.slice(1).trim());
+                cost += attendee.donationCost;
+            } else {
+                attendee.donationCost = null;
+            }
+
+            // get room cost here
+            attendee.room = 100;
+            cost += attendee.room;
+            attendee.cost = cost;
+            return;
+        },
+
+		/*
 		 * create an attendee
 		 */
-		createAttendee: function() {
-			// append new attendee onto attendees list
-			this.attendees.unshift({
-				attendeeColor: 'colorizeContainer' + (this.attendees.length-1),
-				firstName: $('#wowFirstName').val(),
-				lastName: $('#wowLastName').val(),
-				poc: $('#wowPoc').val(),
-				address: $('#wowAddress').val(),
-				city: $('#wowCity').val(),
-				state: $('#wowState').val(),
-				zip: $('#wowZipCode').val(),
-				email: $('#wowEmail').val(),
-				phone: $('#wowPhone').val(),
-				ageClass: $('#wowAgeClass').val(),
-				donation: $('#wowDonation').val(),
-				shirt: $('#wowShirt').val()
-			});
-			this.previousAttendee();
-			this.addToTable();
-			/*
-			$.ajax({
-				type: 'POST',
-				url: 'http://localhost:4040/wow/register',
-				dataType: 'json',
-				data: JSON.stringify(attendeesRequest)
-			}).done(function(msg) {
-				if(msg.error) {
-					this.feedback = msg.error;
-				}					
-			}).fail(function(msg) {
-				if(msg.error) {
-					this.feedback = msg.error;
-				}	
-			}).always(function(msg) {
-				console.info("response: " + JSON.stringify(msg));
-			});
-			*/
+		addAttendee: function() {
 
-			//this.render();		
-			//this.bindEvents();	
+            // If the button has changed purposes and this is called for some reason then we don't
+            // add an attendee because presumably the user is updating an attendee.
+            if(this.$attendeeForm.find('#addAttendeeButton').html() === 'Save') {
+                return;
+            }
+
+			var attendee = this.attendeeFromForm(this.attendeeId);
+            if(attendee.attendeeId === 1) {
+                attendee.poc = true;
+            }
+			if(this.passBusinessRules(attendee) === false) {
+				// throw up some message to user and return
+				return;
+			}
+            this.computeCost(attendee);
+
+			this.attendeeDb.insert(attendee);
+            // increment attendeeId generator
+            this.attendeeId++;
+            // this will render an empty attendee form ready for next attendee entry
+			this.renderAttendeeForm();
+            // this will add the inserted attendee to the table
+			this.renderAttendeeTable();	
 		},
+
+        /**
+         * Snatch the current attendee from the form fields
+         */
+        attendeeFromForm: function(attendeeId) {
+            var ca = {};
+            if(attendeeId === undefined) {
+                ca.attendeeId = parseInt(this.$attendeeForm.find('#wowAttendeeId').val());
+            } else {
+                ca.attendeeId = parseInt(attendeeId);
+            }
+            ca.firstName = this.$attendeeForm.find('#wowFirstName').val();
+            ca.lastName = this.$attendeeForm.find('#wowLastName').val();
+            ca.address = this.$attendeeForm.find('#wowAddress').val();
+            ca.city = this.$attendeeForm.find('#wowCity').val();
+            ca.state = this.$attendeeForm.find('#wowState').val();
+            ca.zip = this.$attendeeForm.find('#wowZipCode').val();
+            ca.email = this.$attendeeForm.find('#wowEmail').val();
+            ca.phone = this.$attendeeForm.find('#wowPhone').val();
+            ca.ageClass = this.$attendeeForm.find('#wowAgeClass').val();
+            ca.donation = this.$attendeeForm.find('#wowDonation').val();
+            ca.shirt = this.$attendeeForm.find('#wowShirt').val();
+            ca.poc = this.$attendeeForm.find('#wowPoc').is(':checked');
+
+            return ca;
+        },
+
+        validateAttendeeForm: function() {
+
+
+        },
+
+        /**
+         * Accept an attendee and place onto attendeeForm
+         * @param attendee
+         */
+        editAttendee: function(event) {
+            // get attendeeId from attendeeTable's dom
+            var attendeeId = $(event.currentTarget).attr('id').replace(/^.+-/,'');
+            // find attendee from attendeeId
+            var attendee = this.attendeeDb({attendeeId: parseInt(attendeeId)}).first();
+            // load attendee into attendeeForm
+            this.renderAttendeeForm(attendee);
+            // change 'Add Lady' button to read: 'Save'
+            this.$attendeeForm.find('#addAttendeeButton').html('Save');
+            // attach click listener to Save button
+            var _self = this;
+            this.$attendeeForm.find('#addAttendeeButton')
+                .on('click', function() {
+                    // if Save clicked then update model and re-render registration table
+                    var updatedAttendee = _self.attendeeFromForm(attendeeId);
+                    _self.computeCost(updatedAttendee);
+                    _self.updateAttendee(updatedAttendee);
+                    _self.renderAttendeeTable();
+                });
+        },
 
 		/*
 		 * Load the previous attendee from model into attendee form but
@@ -606,59 +717,111 @@ jQuery(function($) {
 		 * can return and finish up.  If this method is called and pointer
 		 * is at beginning of attendee list then circle back to end of list.
 		 */
-		previousAttendee: function() {
-			if(this.attendeePointer >= (this.attendees.length-1)) {
-				this.attendeePointer = -1;
-			}
-			this.attendeePointer++;
-			console.info('attendeePointer: ' + this.attendeePointer);	
-			if(this.attendeePointer === this.attendees.length-1) {
-				this.attendees[this.attendeePointer].attendeeColor = 'colorizeContainer' + this.attendeePointer;
-			}
-			// pull attendee from model and project onto view
-			this.renderAttendeeForm(this.attendees[this.attendeePointer]);		
-		},
+        previousAttendee: function() {
+            var curAttendee = this.attendeeFromForm(), rec;
+            if(isNaN(curAttendee.attendeeId)) {
+                rec = this.attendeeDb().order('attendeeId desc').first();
+            } else {
+                rec = this.attendeeDb({attendeeId:{lt:curAttendee.attendeeId}})
+                    .order('attendeeId desc').first();
+            }
+            // there is no prev
+            if(rec === false) {
+                // so loop back to end
+                this.renderAttendeeForm();
+            } else {
+                this.renderAttendeeForm(rec);
+            }
+        },
 
-		/*
-		 * Load the next attendee from model into attendee form but before
-		 * doing so save current content in attendee form so user can return
-		 * and finish up.  If this method is called and pointer is at end of
-		 * attendee list then circle back to start of list.
-		 */
-		nextAttendee: function() {
-			if(this.attendeePointer <= 0) {
-				this.attendeePointer = this.attendees.length;
-			}
-			this.attendeePointer--;
-			console.info('attendeePointer: ' + this.attendeePointer);
-			if(this.attendeePointer === this.attendees.length-1) {
-				this.attendees[this.attendeePointer].attendeeColor = 'colorizeContainer' + this.attendeePointer;
-			}			
-			// pull attendee from model and project onto view
-			this.renderAttendeeForm(this.attendees[this.attendeePointer]);
-		},
+        /**
+         * Next button was clicked so get the current state of the attendee form and
+         * load the next attendee (if any) into the form, otherwise just reset form
+         * with an blank attendee.
+         */
+        nextAttendee: function() {
+            var curAttendee = this.attendeeFromForm(), rec;
+            if(isNaN(curAttendee.attendeeId)) {
+                // next was clicked on a form with an un-committed attendee (thus no attendeeId)
+                // so in this context next loops back to start
+                rec = this.attendeeDb().order('attendeeId asec').first();
+            } else {
+                rec = this.attendeeDb({attendeeId:{gt:curAttendee.attendeeId}})
+                    .order('attendeeId asec').first();
+            }
+            // there is no next
+            if(rec === false) {
+                // so loop back to start
+                // rec = this.attendeeDb().order('attendeeId asec').first();
+                this.renderAttendeeForm();
+            } else {
+                // pull attendee from model and project onto view
+                this.renderAttendeeForm(rec);
+            }
+        },
 
 		/*
 		 * update an attendee
 		 */ 
-		updateAttendee: function () {
-
-		},	
-
-		addToTable: function() {
-			this.$registeredForm.html(this.registeredTemplate({
-				// bind data should go here
-				attendees: this.attendees.slice(0,this.attendees.length-1).reverse()
-			}));
+		updateAttendee: function (updatedAttendee) {
+            this.attendeeDb({attendeeId: updatedAttendee.attendeeId}).update(updatedAttendee);
 		},
 
+        /*
+         * point-of-contact changed on GUI
+         */
+        pocChanged: function() {
+            // get current attendee with new poc value
+            var curAttendee = this.attendeeFromForm();
+            if(isNaN(curAttendee.attendeeId)===false) {
+                // update actual attendee
+                this.updateAttendee(curAttendee);
+            }
+
+            if(this.$attendeeForm.find('#addAttendeeButton').html() === 'Save') {
+                return;
+            }
+            this.renderAttendeeForm(curAttendee);
+        },
+
+        /**
+         * Remove an attendee from model
+         * @param event
+         */
+		removeAttendee: function(event) {
+            var attendeeId = $(event.currentTarget).attr('id').replace(/^.+-/,'');
+            var n = this.attendeeDb({attendeeId: parseInt(attendeeId)}).remove();
+            if(n !== 1) {
+                console.error('removeAttendee: Could not remove attendee: ' + attendeeId);
+            }
+            this.renderAttendeeForm();
+            this.renderAttendeeTable();
+        },
+
+		/*
+		 * commit registration info and send to paypal for payment
+		 */
+		pay: function() {
+            this.init();
+		},
+
+		/*
+		 * quiz the user to test if they're a robot
+		 */
+		quiz: function() {
+
+		},
+
+		/*
+		 * render the attendee form
+		 */
 		renderAttendeeForm: function(attendee) {
 
 			if(!attendee) {
-				return;
+				attendee = {};
 			}
 			this.$attendeeForm.html(this.attendeeTemplate({
-				attendeeColorClass: attendee.attendeeColor,
+                attendeeId: attendee.attendeeId,
 				firstName: attendee.firstName,
 				lastName: attendee.lastName,
 				email: attendee.email,
@@ -672,34 +835,61 @@ jQuery(function($) {
 				donation: attendee.donation,
 				poc: attendee.poc
 			}));
-			this.bindEvents();
+			// BIND FORM EVENTS
+			this.bindAttendeeFormEvents();
+		},
+
+		/*
+		 * Render the attendee table
+		 */
+		renderAttendeeTable: function() {
+            var attendees = this.attendeeDb().order('attendeeId asec').get();
+            if(attendees === false) {
+                attendees = undefined;
+            }
+			this.$registeredTable.html(this.registeredTemplate({
+				// bind data should go here
+				attendees: attendees
+			}));
+			// BIND TABLE EVENTS
+			this.bindAttendeeTableEvents();
 		},
 
 		/*
 		 * render() will bind data from the model into the view
 		 */ 
 		render: function() {
-			this.$attendeeForm.html(this.attendeeTemplate({
-				firstName: ''
-			}));
 			this.$headerSection.html(this.headerSectionTemplate({
 				title: 'WoW Conference 2014!'
 			}));
-			this.$registeredForm.html(this.registeredTemplate({
-				// bind data should go here
-			}));
+			this.renderAttendeeForm({poc:true});
+			this.renderAttendeeTable();
+
 			this.$footerSection.html(this.footerTemplate({
-				// bind data should go here
+				// footer bind data should go here
 			}));		
 
-			//WowDb.store('wowreg-attendees', this.attendees);				
-		},
-
-		reRender: function() {
-			this.render(arguments);
-			this.bindEvents();			
 		}
 	};
 
 	App.init();
 });
+
+/*
+$.ajax({
+	type: 'POST',
+	url: 'http://localhost:4040/wow/register',
+	dataType: 'json',
+	data: JSON.stringify(attendeesRequest)
+}).done(function(msg) {
+	if(msg.error) {
+		this.feedback = msg.error;
+	}					
+}).fail(function(msg) {
+	if(msg.error) {
+		this.feedback = msg.error;
+	}	
+}).always(function(msg) {
+	console.info("response: " + JSON.stringify(msg));
+});
+*/

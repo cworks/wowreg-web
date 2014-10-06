@@ -48,8 +48,9 @@ table {
 }
 
 .table>thead>tr>th, .table>tbody>tr>th, .table>tfoot>tr>th, .table>thead>tr>td, .table>tbody>tr>td, .table>tfoot>tr>td {
-  vertical-align: top;
+  vertical-align: middle;
   border-top: 1px solid #eebad0;
+  padding: 5px;
 }
 
 .table {
@@ -61,9 +62,7 @@ table {
   color: #f5f5f5;  
 }
 
-.btn {
-  width: 100%;
-}
+
 
 .control-label,
 .has-success .control-label,
@@ -106,6 +105,14 @@ table {
 
 .has-error .form-control-feedback {
   color: #BA3915;
+}
+
+.glyphicon-remove {
+    color: #BA3915;
+}
+
+.glyphicon-ok {
+    color: #02B01A;
 }
 
 .typeahead {
@@ -216,4 +223,8 @@ input[type="color"]:focus,
   text-align: left;
   padding: 5px;
   margin-bottom: 0px;
+}
+
+#attendeeForm {
+    background: #FCC6D6;
 }
