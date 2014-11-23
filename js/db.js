@@ -33,6 +33,7 @@ var attendees = [
         'email' : 'ronald@whitehouse.gov',
         'phone' : '202-456-2121',
         'ageClass' : 'adult',
+        'room': 10000,
         'items' : [ { 'item' : 'L Shirt', 'price' : 1200 } ]
     },
     {
@@ -45,7 +46,8 @@ var attendees = [
         'zip' : '50273',
         'email' : 'johnw@alamo.com',
         'phone' : '515-462-1044',
-        'ageClass' : 'adult'
+        'ageClass' : 'adult',
+        'room': 10000
     },
     {
         'id':4,
@@ -57,7 +59,8 @@ var attendees = [
         'zip' : '90210',
         'email' : 'bugs@looneytoones.com',
         'phone' : '1-800-123-4562',
-        'ageClass' : 'teen'
+        'ageClass' : 'Teen',
+        'room': 10000
     },
     {
         'id':5,
@@ -69,7 +72,8 @@ var attendees = [
         'zip' : '111111',
         'email' : 'nacho@libre.com',
         'phone' : '231-111-1111',
-        'ageClass' : 'adult'
+        'ageClass' : 'Teen',
+        'room': 10000
     }
 ];
 
@@ -91,10 +95,14 @@ db.insert(
         'zip' : '76111',
         'email' : 'bucky@blueeye.com',
         'phone' : '817-999-1010',
-        'ageClass' : 'teen'
+        'ageClass' : 'Teen'
     }
 );
 console.log('select new attendee: ' + db({firstName:'Bucky', lastName: 'Martin'}).pretty());
+
+db({ageClass:'Teen'}).update({room: 5000, state: 'AZ'});
+console.log('select teens: ' + db({ageClass:'Teen'}).pretty());
+
 
 // ***************************************************
 // * Chicken scratching ideas for circular data access

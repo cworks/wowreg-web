@@ -1,3 +1,4 @@
 Wow Conference Registration Web App
 ===================================
-cworksinc
+
+www.wowconf.org registration app.

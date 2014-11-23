@@ -1,0 +1,20 @@
+<section id="#cancelapp">
+
+    <h2>Bummer!</h2>
+
+    <p>
+        {{#if attendees.length}}
+            <p>We cancelled WoW 2015 registration for</p>
+            {{#each attendees}}
+                <p>{{firstName}} {{lastName}}</p>
+            {{/each}}
+        {{else}}
+            <p>We cancelled your WoW 2015 registration.</p>
+        {{/if}}
+    </p>
+
+    <h3>
+        <b><a href="https://www.wowconf.org">Try again?</a></b>
+    </h3>
+
+</section>

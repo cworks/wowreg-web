@@ -1,4 +1,4 @@
-/*global jQuery, Handlebars, _, TAFFY */
+/*global jQuery, Handlebars, _, templatize, TAFFY */
 jQuery(function($) {
 
 	'use strict';
@@ -30,6 +30,16 @@ jQuery(function($) {
 	var wowShirts = ['None', 'Xtra-Small $10', 'Small $10', 'Medium $10',
 		'Large $11', 'Xtra-Large $12', 'Xtra-Xtra-Large $12'];
 
+    /*
+     * Room w/ 1 - $185 /each
+     * Room w/ 2 - $115 /each
+     * Room w/ 3 - $95 /each
+     * Room w/ 4 - $85 /each
+     * Room w/ 5 - $85 /each
+     * Room w/ 6 - $85 /each
+     */
+    var roomCosts = [185, 115, 95, 85, 85, 85];
+
 	var substringMatcher = function(strs) {
 		return function findMatches(q, cb) {
 			var matches, substrRegex;
@@ -45,7 +55,7 @@ jQuery(function($) {
 			$.each(strs, function(i, str) {
 		  		if(substrRegex.test(str)) {
 		    		// the typeahead jQuery plugin expects suggestions to a
-		    		// JavaScript object, refer to typeahead docs for more info
+		    		// JavaScript object, refer to typeahead docs  more info
 		    		matches.push({ value: str });
 		  		}
 			});
@@ -86,40 +96,6 @@ jQuery(function($) {
 			}
 		};
 	};
-
-	/*
-	 * Convert a template into HTML
-	 */
-	var templatize = (function() {
-
-		var apply = function(template, templateData) {
-			if(!templatize.templateCache) {
-				templatize.templateCache = {};
-			}
-
-			if(!templatize.templateCache[template]) {
-				var templateDir = '/templates';
-				var templateUrl = templateDir + '/' + template + '.html';
-				var templateString;
-
-				$.ajax({
-					url: templateUrl,
-					async: false
-					}).done(function(data) {
-						templateString = data;
-					});
-
-				templatize.templateCache[template] =
-					_.template(templateString);
-			}
-
-			return templatize.templateCache[template](templateData);
-		};
-		return {
-			templateCache: {},
-			apply : apply	
-		};
-	}());
 
 	/*
 	 * Validate the different inputs
@@ -201,7 +177,8 @@ jQuery(function($) {
 			this.initModel();
 			this.cacheElements();
 			this.render();
-		},
+            $('#paySpinner').hide();
+        },
 
 		/*
 		 * initialize model
@@ -211,6 +188,9 @@ jQuery(function($) {
 			this.attendeeId = 1;
 		},
 
+        /*
+         * Cache certain elements of the DOM and templates for ease of use.
+         */
 		cacheElements: function() {
 			this.attendeeTemplate = Handlebars.compile(
 				templatize.apply('attendee'), {}
@@ -223,9 +203,13 @@ jQuery(function($) {
 			);			
 			this.footerTemplate = Handlebars.compile(
 				templatize.apply('footer'), {}
-			);						
+			);
+            this.paypalRedirectTemplate = Handlebars.compile(
+                templatize.apply('paypalredirect'), {}
+            );
 			this.$wowApp = $('#wowapp');
 			this.$headerSection  = this.$wowApp.find('#header-section');
+            this.$paypalRedirectForm = this.$wowApp.find('#paypalredirect-form');
 			this.$attendeeForm   = this.$wowApp.find('#attendee-form');
 			this.$registeredTable = this.$wowApp.find('#registered-form');
 			this.$footerSection  = this.$wowApp.find('#footer-section');
@@ -233,6 +217,7 @@ jQuery(function($) {
 			this.$main   = this.$wowApp.find('#main');
 			this.$footer = this.$wowApp.find('#footer');
 			this.feedback = '';
+
 		},
 
 		/*
@@ -536,6 +521,30 @@ jQuery(function($) {
 
 		},
 
+        /*
+         * bind event source and handlers for controls on the footer, controls such as the pay button
+         * cha-ching
+         */
+        bindAttendeeFooterEvents: function() {
+
+            var _self = this;
+
+            this.$footerSection.find('#payButton')
+                .on('click', this.showConfirmation.bind(this));
+
+            this.$footerSection.find('#wowConfirmDialog')
+                .on('shown.bs.modal', function() {
+
+                    $(this).find('#wowCancel').on('click', function() {
+                        _self.doCancel();
+                    });
+
+                    $(this).find('#wowConfirm').on('click', function() {
+                        _self.pay();
+                    });
+                });
+        },
+
 		/*
 		 * Check if adding this attendee is okay according to the business rules,
 		 * this includes input data validation and actual core business rules
@@ -598,12 +607,26 @@ jQuery(function($) {
             return problemWidgets;
         },
 
+        updateCosts: function() {
+
+            // compute (adjust) room cost for each attendee because cost per attendee
+            // goes down with more attendees
+            this.computeRoomCost();
+
+            // compute cost and make cost adjustments for each attendee based on business rules
+            var attendees = this.attendeeDb().order('attendeeId asec').get();
+            var _self = this;
+            $.each(attendees, function(i, person) {
+                _self.computeCost(person);
+            });
+        },
+
         /**
          * Compute cost for given attendee.
          * @param attendee
          */
         computeCost: function(attendee) {
-            var cost = 0;
+            var cost = 0, roomCost;
             if(attendee.shirt === 'None') {
                 attendee.shirtCost = null;
             } else {
@@ -619,11 +642,47 @@ jQuery(function($) {
             }
 
             // get room cost here
-            attendee.room = 100;
-            cost += attendee.room;
+            roomCost = this.attendeeDb({attendeeId: attendee.attendeeId}).select('room');
+            cost += roomCost[0];
             attendee.cost = cost;
+
+            this.attendeeDb({attendeeId: attendee.attendeeId})
+                .update({
+                    shirtCost: attendee.shirtCost,
+                    shirtSize: attendee.shirtSize,
+                    donationCost: attendee.donationCost,
+                    cost: attendee.cost
+                });
+
             return;
         },
+
+        computeRoomCost: function() {
+
+            var n = this.attendeeDb().count();
+            if(n <= 0) {
+                console.info('computeAdjustedCost() was called but there are no attendees.');
+                return;
+            }
+
+            if(n > 6) {
+                console.info('computeAdjustedCost() ruh roh scooby we have more ' +
+                    'than 6 attendees in a room: ' + ' ' + n);
+                return;
+            }
+
+            // update the cost per attendee according to how many attendees have registered
+            this.attendeeDb().update({room: roomCosts[n-1]});
+
+            // Once there are 4 in a room
+            //     if one of the attendees is a teen,
+            //         the rate for each teen is $50.
+            // If there are less than 4 in a room
+            //     the teen is charged the regular price.
+            if(n >= 4) {
+                this.attendeeDb({ageClass:'Teen'}).update({room: 50});
+            }
+         },
 
 		/*
 		 * create an attendee
@@ -644,11 +703,13 @@ jQuery(function($) {
 				// throw up some message to user and return
 				return;
 			}
-            this.computeCost(attendee);
 
 			this.attendeeDb.insert(attendee);
             // increment attendeeId generator
             this.attendeeId++;
+
+            // update attendee costs based on business rules
+            this.updateCosts();
             // this will render an empty attendee form ready for next attendee entry
 			this.renderAttendeeForm();
             // this will add the inserted attendee to the table
@@ -676,14 +737,9 @@ jQuery(function($) {
             ca.ageClass = this.$attendeeForm.find('#wowAgeClass').val();
             ca.donation = this.$attendeeForm.find('#wowDonation').val();
             ca.shirt = this.$attendeeForm.find('#wowShirt').val();
-            ca.poc = this.$attendeeForm.find('#wowPoc').is(':checked');
+            ca.poc = (this.$attendeeForm.find('#wowPoc').val() === 'true');
 
             return ca;
-        },
-
-        validateAttendeeForm: function() {
-
-
         },
 
         /**
@@ -707,6 +763,8 @@ jQuery(function($) {
                     var updatedAttendee = _self.attendeeFromForm(attendeeId);
                     _self.computeCost(updatedAttendee);
                     _self.updateAttendee(updatedAttendee);
+                    _self.updateCosts();
+                    _self.renderAttendeeForm();
                     _self.renderAttendeeTable();
                 });
         },
@@ -794,22 +852,77 @@ jQuery(function($) {
             if(n !== 1) {
                 console.error('removeAttendee: Could not remove attendee: ' + attendeeId);
             }
+            this.updateCosts();
             this.renderAttendeeForm();
             this.renderAttendeeTable();
+        },
+
+        /**
+         * Perform a confirmation, ask user to confirm they are ready to pay because
+         * they cannot make changes to group after they choose to pay.
+         */
+        showConfirmation: function() {
+
+            var attendees = this.attendeeDb().order('attendeeId asec').get();
+
+            if(attendees === false || attendees === null || attendees === undefined || attendees.length === 0) {
+                this.$footerSection.find('#wowWhoopsieDialog').modal('show');
+                return;
+            }
+
+            this.$footerSection.find('#wowConfirmDialog').modal('show');
+        },
+
+        doCancel: function() {
+            this.$footerSection.find('#paySpinner').hide();
+            this.$footerSection.find('#wowConfirmDialog').modal('hide');
         },
 
 		/*
 		 * commit registration info and send to paypal for payment
 		 */
 		pay: function() {
-            this.init();
-		},
 
-		/*
-		 * quiz the user to test if they're a robot
-		 */
-		quiz: function() {
+            console.info('Paying...');
+            this.$footerSection.find('#paySpinner').show();
 
+            var attendees = this.attendeeDb().order('attendeeId asec').get(),
+                groupTotalCost = 0,
+                _self = this;
+
+            if(attendees === false || attendees === null || attendees === undefined) {
+                console.info('pay() was called but there are no attendees.');
+                return;
+            }
+
+            // touch every attendee and read the cost field, see computeCost.
+            $.each(attendees, function (i, attendee) {
+                groupTotalCost += attendee.cost;
+            });
+
+            var postData = {
+                'groupTotalCost' : groupTotalCost,
+                'attendees' : attendees
+            };
+
+            $.ajax({
+                type: 'POST',
+                url: '//localhost:4040/wow/pay', /* TODO this will need to change, see code on wowconf.org */
+                dataType: 'json',
+                data: JSON.stringify(postData)
+            }).done(function(msg) {
+                if(msg.error) {
+                    console.info(msg.error);
+                } else {
+                    _self.$footerSection.find('#paySpinner').hide();
+                    _self.$footerSection.find('#wowConfirmDialog').modal('hide');
+                    _self.renderPayPalRedirectForm(msg);
+                }
+            }).fail(function(msg) {
+                if(msg.error) {
+                    console.info(msg.error);
+                }
+            });
 		},
 
 		/*
@@ -843,53 +956,82 @@ jQuery(function($) {
 		 * Render the attendee table
 		 */
 		renderAttendeeTable: function() {
-            var attendees = this.attendeeDb().order('attendeeId asec').get();
+            var attendees = this.attendeeDb().order('attendeeId asec').get(),
+                groupTotalCost = 0;
             if(attendees === false) {
                 attendees = undefined;
             }
+
+            if(attendees !== undefined) {
+                $.each(attendees, function (i, attendee) {
+                    groupTotalCost += attendee.cost;
+                });
+                if(groupTotalCost === 0) {
+                    groupTotalCost = null;
+                }
+            }
+
 			this.$registeredTable.html(this.registeredTemplate({
 				// bind data should go here
-				attendees: attendees
+				attendees: attendees,
+                groupTotalCost: groupTotalCost
 			}));
+
 			// BIND TABLE EVENTS
 			this.bindAttendeeTableEvents();
 		},
+
+        /*
+         * Render footer that contains pay button and bot buttons
+         */
+        renderFooterSection: function() {
+            this.$footerSection.html(this.footerTemplate({
+                // footer bind data should go here
+            }));
+            // BIND FOOTER EVENTS
+            this.bindAttendeeFooterEvents();
+        },
+
+        /*
+         * Render paypal redirect form.  This is last page user sees before being
+         * redirected to paypal.
+         */
+        renderPayPalRedirectForm: function(msg) {
+            var approvalUrl = null, totalCost = 0, idx = 0;
+            // TODO move this code (presentation code) into its own function
+            // hide the other forms
+            this.$attendeeForm.hide();
+            this.$footerSection.hide();
+            this.$registeredTable.hide();
+
+            for(idx in msg.response.links) {
+                if(msg.response.links[idx].rel === 'approval_url') {
+                    approvalUrl = msg.response.links[idx].href;
+                }
+            }
+
+            totalCost = msg.response.transactions[0].amount.total;
+
+            // render paypal redirect form with countdown indicator
+            this.$paypalRedirectForm.html(this.paypalRedirectTemplate({
+                totalCost: totalCost,
+                approvalUrl: approvalUrl
+            }));
+        },
 
 		/*
 		 * render() will bind data from the model into the view
 		 */ 
 		render: function() {
 			this.$headerSection.html(this.headerSectionTemplate({
-				title: 'WoW Conference 2014!'
+				title: 'WoW Conference 2015!'
 			}));
 			this.renderAttendeeForm({poc:true});
 			this.renderAttendeeTable();
-
-			this.$footerSection.html(this.footerTemplate({
-				// footer bind data should go here
-			}));		
+            this.renderFooterSection();
 
 		}
 	};
 
 	App.init();
 });
-
-/*
-$.ajax({
-	type: 'POST',
-	url: 'http://localhost:4040/wow/register',
-	dataType: 'json',
-	data: JSON.stringify(attendeesRequest)
-}).done(function(msg) {
-	if(msg.error) {
-		this.feedback = msg.error;
-	}					
-}).fail(function(msg) {
-	if(msg.error) {
-		this.feedback = msg.error;
-	}	
-}).always(function(msg) {
-	console.info("response: " + JSON.stringify(msg));
-});
-*/

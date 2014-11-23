@@ -1,0 +1,47 @@
+<section id="#thanksapp">
+
+    {{#if alreadyRegistered}}
+
+        <h2>Whoopsie!</h2>
+        <p>It looks like the following ladies are already registered for</p>
+        <h2>WoW 2015</h2>
+        {{#each attendees}}
+            <p>{{firstName}} {{lastName}}</p>
+        {{/each}}
+        <p><b>Confirmation Number:</b> {{confirmationNumber}}</p>
+        <p><b>Completed on:</b> {{completedOn}}</p>
+        <h3>
+            <b><a href="http://womenofworthiness.com">See you at WoW!</a></b>
+        </h3>
+    {{/if}}
+
+    {{#if wowServerError}}
+
+        <h2>Whoopsie!</h2>
+        <p>Well this is embarrassing...it looks like we had a small glitch.</p>
+        <p><b>Please contact:</b></p>
+        <p>{{wowAdminFirstName}} {{wowAdminLastName}}</p>
+        <p>at</p>
+        <p><a href="mailto:{{wowAdminEmail}}">{{wowAdminEmail}}</a> or {{wowAdminPhone}}</p>
+
+    {{/if}}
+
+
+    {{#if thanks}}
+
+        <h2>Thank You for registering!</h2>
+        <h2>We'll see</h2>
+        {{#each attendees}}
+        <p>{{firstName}} {{lastName}}</p>
+        {{/each}}
+        <h2>at</h2>
+        <h2>WoW 2015!</h2>
+        <p><b>Confirmation Number:</b> {{confirmationNumber}}</p>
+        <h3>
+            <b><a href="http://womenofworthiness.com">See you at WoW!</a></b>
+        </h3>
+    {{/if}}
+
+
+
+</section>

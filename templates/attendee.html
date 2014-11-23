@@ -1,6 +1,8 @@
 <form id="wowForm" onsubmit="return false;">
 <div id="attendeeForm" class="container">
+
     <input type="hidden" id="wowAttendeeId" name="wowAttendeeId" value="{{attendeeId}}">
+    <input type="hidden" id="wowPoc" name="wowPoc" value="{{poc}}">
 
     <div class="row">
         <div class="col-md-6">
@@ -170,35 +172,27 @@
                 <span class="glyphicon form-control-feedback"></span>
             </div>
 
-            <!--
-            <div id='wowPocWidget' class="checkbox">
-                <label>
-                    <input type="checkbox" name="pocCheckbox" id="wowPoc" "{{#if poc}} checked {{/if}}">
-                    Select if attendee is paying for this group
-                </label>
-            </div>
-            -->
         </div>
     </div>
-    <div class="row">
+    <div class="row vertical-align">
         <div class="col-md-2">
-            <button id="prevButton" type="button" class="btn btn-default">Prev</button>
+            <!-- <button id="prevButton" type="button" class="btn btn-default">Prev</button> -->
         </div>
         <div class="col-md-2">
         </div>
         <div class="col-md-1">
         </div>
         <div class="col-md-2">
-            <button id="addAttendeeButton" type="button" class="btn btn-default">Add Lady</button>
+            <!-- <button id="nextButton" type="button" class="btn btn-default">Next</button> -->
         </div>
         <div class="col-md-1">
         </div>
         <div class="col-md-2">
         </div>
         <div class="col-md-2">
-            <button id="nextButton" type="button" class="btn btn-default">Next</button>
+            <button id="addAttendeeButton" type="button" class="btn btn-info btn-block">Add Lady</button>
         </div>
     </div>
+
 </div>
 </form>
-

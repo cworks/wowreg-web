@@ -1,18 +1,44 @@
-<div id="footerForm" class="container">
+<!DOCTYPE html>
+<html lang="en" data-framework="jquery">
+<head>
+    <meta charset="utf-8">
+    <title>WoW Cancellation :(</title>
+    <link href="bower_components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href='https://fonts.googleapis.com/css?family=Pacifico' rel='stylesheet' type='text/css'>
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,600,700,800' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="bower_components/fontawesome/css/font-awesome.css">
+    <link rel="stylesheet" href="styles/css/wow.css">
+</head>
+<body>
+<div class="container thankyou">
+    <div class="row">
+        <div class="col-md-12 text-center">
 
-    <div class="row vertical-align">
-        <div class="col-md-2 pull-left"></div>
-        <div class="col-md-2"></div>
-        <div class="col-md-1"></div>
-        <div class="col-md-2"></div>
-        <div class="col-md-1"></div>
-        <div class="col-md-2"></div>
-        <div class="col-md-2">
-            <button id="payButton" type="button" class="btn btn-success btn-block">Pay</button>
+            <div id="finishing">
+
+                <div class="row">
+                    <div class="col-md-12 text-center">
+                        <i class="fa fa-refresh fa-spin fa-5x"></i>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12 text-center">
+                        <b>Cancelling registration...</b>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
-
+    <div class="row">
+        <div class="col-md-12 text-center">
+            <!-- templates will load here -->
+            <div id="cancelled"></div>
+        </div>
+    </div>
 </div>
+
 <div class="container cworksinfo">
     <div class="row">
         <div class="col-md-12 text-center">
@@ -30,45 +56,10 @@
     </div>
 </div>
 
-<!-- Modal Confirmation -->
-<div class="modal fade" id="wowConfirmDialog" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-vertical-align">
-        <div class="modal-content">
-            <div class="modal-body text-center">
-                <div class="row">
-                    <div class="col-md-12 text-center">
-                        <p>Please confirm you're ready to pay.  Modifications cannot be made beyond this point.</p>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-12 text-center">
-                        <i id="paySpinner" class="fa fa-refresh fa-spin fa-2x"></i>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button id="wowCancel" type="button" class="btn btn-danger">Close</button>
-                <button id="wowConfirm" type="button" class="btn btn-success">Continue</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal Whoopsie -->
-<div class="modal fade" id="wowWhoopsieDialog" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-vertical-align">
-        <div class="modal-content">
-            <div class="modal-body text-center">
-                <div class="row">
-                    <div class="col-md-12 text-center">
-                        <p>Whoopsie!</p>
-                        <p>You haven't added attendees.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-info" data-dismiss="modal">Ok</button>
-            </div>
-        </div>
-    </div>
-</div>
+<script src="bower_components/jquery/dist/jquery.min.js"></script>
+<script src="bower_components/underscore/underscore.js"></script>
+<script src="bower_components/handlebars/handlebars.js"></script>
+<script src="js/templatize.js"></script>
+<script src="js/cancelApp.js"></script>
+</body>
+</html>
