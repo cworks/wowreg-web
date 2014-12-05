@@ -47,7 +47,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button id="wowCancel" type="button" class="btn btn-danger">Close</button>
+                <button id="wowCancel" type="button" class="btn btn-danger">Back</button>
                 <button id="wowConfirm" type="button" class="btn btn-success">Continue</button>
             </div>
         </div>
@@ -63,6 +63,25 @@
                     <div class="col-md-12 text-center">
                         <p>Whoopsie!</p>
                         <p>You haven't added attendees.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-info" data-dismiss="modal">Ok</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Attendee Limit dialog -->
+<div class="modal fade" id="attendeeLimitDialog" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-vertical-align">
+        <div class="modal-content">
+            <div class="modal-body text-center">
+                <div class="row">
+                    <div class="col-md-12 text-center">
+                        <p>Whoopsie!</p>
+                        <p>Occupancy is limited to 6 attendees per room.</p>
                     </div>
                 </div>
             </div>

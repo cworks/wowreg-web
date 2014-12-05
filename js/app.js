@@ -1,4 +1,4 @@
-/*global jQuery, Handlebars, _, templatize, TAFFY */
+/*global jQuery, Handlebars, templatize, TAFFY */
 jQuery(function($) {
 
 	'use strict';
@@ -27,8 +27,7 @@ jQuery(function($) {
 	/*
 	 * Wow Shirt selections
 	 */
-	var wowShirts = ['None', 'Xtra-Small $10', 'Small $10', 'Medium $10',
-		'Large $11', 'Xtra-Large $12', 'Xtra-Xtra-Large $12'];
+	var wowShirts = ['None', 'Small $12', 'Medium $12', 'Large $12', 'X-Large $12', 'XX-Large $15', 'XXX-Large $15'];
 
     /*
      * Room w/ 1 - $185 /each
@@ -207,6 +206,7 @@ jQuery(function($) {
             this.paypalRedirectTemplate = Handlebars.compile(
                 templatize.apply('paypalredirect'), {}
             );
+
 			this.$wowApp = $('#wowapp');
 			this.$headerSection  = this.$wowApp.find('#header-section');
             this.$paypalRedirectForm = this.$wowApp.find('#paypalredirect-form');
@@ -274,12 +274,7 @@ jQuery(function($) {
 				}, {
 					name: 'shirt',
 					displayKey: 'value',
-					source: matchOrShowAll(['None', 'Xtra-Small $10',
-						'Small $10',
-						'Medium $10',
-						'Large $11',
-						'Xtra-Large $12',
-						'Xtra-Xtra-Large $12']),
+					source: matchOrShowAll(wowShirts),
 					templates: {
 				  		empty: [
 				    		'<div class="empty-message">',
@@ -375,27 +370,7 @@ jQuery(function($) {
 				    );				
 				}
 			);	
-			this.$attendeeForm.find('#wowAgeClass')
-				.on('keyup change blur', function() {
-			    	var $this = $(this);
-			    	validate.matchOne(['Adult', 'Teen'], $this.val(),
-				      	function (matched) {
-				      		// need to pass $this.parent because typeahead
-				      		// wraps this with a span
-				        	validate.hasSuccess($this.parent());  
-				        	$this.val(matched);  
-				      	},
-				      	function (error) {
-				      		console.info('wowAgeClass: ' + error);				      		
-				      		if($this.val().length===0) {
-				      			validate.clearGlyphicon($this.parent());				      			
-				      			return;
-				      		}
-				        	validate.hasError($this.parent());
-				      	}
-				    );				
-				}
-			);								
+
 			this.$attendeeForm.find('#wowCity')
 				.on('keyup change blur', function() {
 			    	var $this = $(this);
@@ -471,6 +446,27 @@ jQuery(function($) {
 			        }
 		  		}
 		  	);
+            this.$attendeeForm.find('#wowAgeClass')
+                .on('keyup change blur', function() {
+                    var $this = $(this);
+                    validate.matchOne(['Adult', 'Teen'], $this.val(),
+                        function (matched) {
+                            // need to pass $this.parent because typeahead
+                            // wraps this with a span
+                            validate.hasSuccess($this.parent());
+                            $this.val(matched);
+                        },
+                        function (error) {
+                            console.info('wowAgeClass: ' + error);
+                            if($this.val().length===0) {
+                                validate.clearGlyphicon($this.parent());
+                                return;
+                            }
+                            validate.hasError($this.parent());
+                        }
+                    );
+                }
+            );
 			this.$attendeeForm.find('#wowShirt')
 				.on('keyup change blur', function() {
 			    	var $this = $(this);
@@ -492,6 +488,14 @@ jQuery(function($) {
 				    );				
 				}
 			);
+
+            $('#wowShirt').click(function(){
+                $(this).attr('placeholder','');
+            });
+
+            $('#wowShirt').focusout(function(){
+                $(this).attr('placeholder','Select One');
+            });
 
             this.$attendeeForm.find('#wowPoc')
                 .on('change', this.pocChanged.bind(this));
@@ -665,12 +669,6 @@ jQuery(function($) {
                 return;
             }
 
-            if(n > 6) {
-                console.info('computeAdjustedCost() ruh roh scooby we have more ' +
-                    'than 6 attendees in a room: ' + ' ' + n);
-                return;
-            }
-
             // update the cost per attendee according to how many attendees have registered
             this.attendeeDb().update({room: roomCosts[n-1]});
 
@@ -695,8 +693,14 @@ jQuery(function($) {
                 return;
             }
 
+            var n = this.attendeeDb().count();
+            if(n >= 6) {
+                this.$footerSection.find('#attendeeLimitDialog').modal('show');
+                return;
+            }
+
 			var attendee = this.attendeeFromForm(this.attendeeId);
-            if(attendee.attendeeId === 1) {
+            if(attendee.attendeeId === 1 || n === 0) {
                 attendee.poc = true;
             }
 			if(this.passBusinessRules(attendee) === false) {

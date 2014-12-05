@@ -36,7 +36,7 @@ jQuery(function($) {
 
             $.ajax({
                 type: 'POST',
-                url: 'http://localhost:4040/wow/paypal',
+                url: '//localhost:4040/wow/paypal',
                 dataType: 'json',
                 data: JSON.stringify(parameters)
             }).done(function(msg) {
@@ -58,7 +58,6 @@ jQuery(function($) {
                             wowAdminFirstName: msg.error.firstName,
                             wowAdminLastName: msg.error.lastName,
                             wowAdminEmail: msg.error.email,
-                            wowAdminPhone: msg.error.phone,
                             wowAdminRole: msg.error.role
                         };
                         break;
@@ -83,8 +82,7 @@ jQuery(function($) {
                     wowServerError: true,
                     wowAdminFirstName: 'Brooke',
                     wowAdminLastName: 'Martin',
-                    wowAdminEmail: 'wowadmin@gmail.com',
-                    wowAdminPhone: '817-111-9999',
+                    wowAdminEmail: 'brooke@womenofworthiness.com',
                     wowAdminRole: 'Event Coordinator'
                 };
 

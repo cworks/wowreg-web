@@ -7,7 +7,7 @@ module.exports = function(grunt) {
     grunt.initConfig({
         srcBuild:     ['Gruntfile.js'],        
         srcJs:        ['js/**/*.js'],
-        srcHtml:      ['index.html', 'templates/*.html'],
+        srcHtml:      ['index.html', 'cancelled.html', 'thankyou.html', 'templates/*.html'],
         srcCss:       ['styles/**/*.css'],
         srcAll:       ['<%= srcJs %>', '<%= srcHtml %>', '<%= srcCss %>'],
         libsAll:      ['assets/**/*', 'bower_components/**/*'],
@@ -49,32 +49,27 @@ module.exports = function(grunt) {
         },
 
         /*
-         * Concat config - make one source file from many
-         */
-        concat: {
-            options: {
-                // delimiter to place between concat'ed files
-                separator: ';'
-            },
-            dist: {
-                // files to concatenate
-                src: ['<%= srcJs %>'],
-                // location of final file
-                dest: '<%= dist %>/js/<%= pkg.name %>.js'
-            }
-        },
-
-        /*
          * Uglify config - minimize our code so that it has a smaller footprint
          */
         uglify: {
             options: {
-                banner: '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd") %> */\n'
+                banner: '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd h:MM:ss TT") %> */\n'
             },
             dist: {
-                files: {
-                    '<%= dist %>/js/<%= pkg.name %>.min.js' : ['<%= concat.dist.dest %>']
-                }
+                files: [
+                    {
+                        '<%= dist %>/js/app.min.js' : ['js/app.js']
+                    },
+                    {
+                        '<%= dist %>/js/thanksApp.min.js' : ['js/thanksApp.js']
+                    },
+                    {
+                        '<%= dist %>/js/cancelApp.min.js' : ['js/cancelApp.js']
+                    },
+                    {
+                        '<%= dist %>/js/templatize.min.js' : ['js/templatize.js']
+                    }
+                ]
             }
         },
 
@@ -108,13 +103,97 @@ module.exports = function(grunt) {
          * Javascript code with slimer albeit uglier versions.
          */
         replace: {
-            dist: {
+            appMin: {
                 src: ['<%= dist %>/index.html'],
-                overwrite: true,                 
-                replacements: [{
-                    from: '<script src="js/app.js"></script>',
-                    to: '<script src="js/<%= pkg.name %>.min.js"></script>'
-                }]
+                overwrite: true,
+                replacements: [
+                    {
+                        from: '<script src="js/app.js"></script>',
+                        to: '<script src="js/app.min.js"></script>'
+                    },
+                    {
+                        from: '<script src="js/templatize.js"></script>',
+                        to: '<script src="js/templatize.min.js"></script>'
+                    }
+                ]
+            },
+            thanksAppMin: {
+                src: ['<%= dist %>/thankyou.html'],
+                overwrite: true,
+                replacements: [
+                    {
+                        from: '<script src="js/thanksApp.js"></script>',
+                        to: '<script src="js/thanksApp.min.js"></script>'
+                    },
+                    {
+                        from: '<script src="js/templatize.js"></script>',
+                        to: '<script src="js/templatize.min.js"></script>'
+                    }
+                ]
+            },
+            cancelAppMin: {
+                src: ['<%= dist %>/cancelled.html'],
+                overwrite: true,
+                replacements: [
+                    {
+                        from: '<script src="js/cancelApp.js"></script>',
+                        to: '<script src="js/cancelApp.min.js"></script>'
+                    },
+                    {
+                        from: '<script src="js/templatize.js"></script>',
+                        to: '<script src="js/templatize.min.js"></script>'
+                    }
+                ]
+            },
+            cancelTemplateUrl: {
+                src: ['<%= dist %>/templates/cancel.html'],
+                overwrite: true,
+                replacements: [
+                    {
+                        from: 'localhost',
+                        to: 'www.wowconf.org'
+                    }
+                ]
+            },
+            thanksTemplateUrl: {
+                src: ['<%= dist %>/templates/thanks.html'],
+                overwrite: true,
+                replacements: [
+                    {
+                        from: 'localhost',
+                        to: 'www.wowconf.org'
+                    }
+                ]
+            },
+            mainAppUrl: {
+                src: ['<%= dist %>/js/app.min.js'],
+                overwrite: true,
+                replacements: [
+                    {
+                        from: 'localhost:4040',
+                        to: 'www.wowconf.org'
+                    }
+                ]
+            },
+            thanksAppUrl: {
+                src: ['<%= dist %>/js/thanksApp.min.js'],
+                overwrite: true,
+                replacements: [
+                    {
+                        from: 'localhost:4040',
+                        to: 'www.wowconf.org'
+                    }
+                ]
+            },
+            cancelAppUrl: {
+                src: ['<%= dist %>/js/cancelApp.min.js'],
+                overwrite: true,
+                replacements: [
+                    {
+                        from: 'localhost:4040',
+                        to: 'www.wowconf.org'
+                    }
+                ]
             }
         },
 
@@ -196,11 +275,31 @@ module.exports = function(grunt) {
     grunt.registerTask('build', [
         'clean',
         'jshint',
-        'concat',
         'uglify',
         'copy',
-        'replace',
+        'replace:appMin',
+        'replace:thanksAppMin',
+        'replace:cancelAppMin',
         'htmlmin'        
+    ]);
+
+    /*
+     * Build order
+     */
+    grunt.registerTask('prod', [
+        'clean',
+        'jshint',
+        'uglify',
+        'copy',
+        'replace:appMin',
+        'replace:thanksAppMin',
+        'replace:cancelAppMin',
+        'replace:cancelTemplateUrl',
+        'replace:thanksTemplateUrl',
+        'replace:mainAppUrl',
+        'replace:thanksAppUrl',
+        'replace:cancelAppUrl',
+        'htmlmin'
     ]);
 
     // executed by just typing grunt on the command line
@@ -215,7 +314,6 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-contrib-htmlmin');
     grunt.loadNpmTasks('grunt-contrib-jshint');
     grunt.loadNpmTasks('grunt-contrib-watch');
-    grunt.loadNpmTasks('grunt-contrib-concat');
     grunt.loadNpmTasks('grunt-contrib-clean');
     grunt.loadNpmTasks('grunt-contrib-copy');
     grunt.loadNpmTasks('grunt-contrib-connect');
