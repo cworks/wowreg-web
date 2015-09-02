@@ -18,18 +18,18 @@
                 <tr class='clickableRow'>
                     <td>{{fullName this}}</td>
                     <td>
-                        {{#if shirtCost}}
-                        {{shirtSize}} ${{shirtCost}}
+                        {{#if shirtAmt}}
+                        {{shirtSize}} ${{shirtAmt}}
                         {{/if}}
                     </td>
-                    <td>{{ageClass}}</td>
-                    <td>${{room}}</td>
+                    <td>{{ageGroup}}</td>
+                    <td>${{roomAmt}}</td>
                     <td>
-                        {{#if donationCost}}
-                        ${{donationCost}}
+                        {{#if donationAmt}}
+                        ${{donationAmt}}
                         {{/if}}
                     </td>
-                    <td>${{cost}}</td>
+                    <td>${{totalAmt}}</td>
                     <td style="width: 90px; text-align: right">
                         <div class="btn-group" style="text-align: right">
                             <button id="edit-{{attendeeId}}" type="button" class="btn btn-sm"

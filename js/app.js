@@ -248,12 +248,12 @@ jQuery(function($) {
 					}
 				}
 			);
-			this.$attendeeForm.find('#wowAgeClassWidget .typeahead').typeahead({
+			this.$attendeeForm.find('#wowAgeGroupWidget .typeahead').typeahead({
 					hint: true,
 					highlight: true,
 					minLength: 0
 				}, {
-					name: 'ageClass',
+					name: 'ageGroup',
 					displayKey: 'value',
 					source: matchOrShowAll(['Adult', 'Teen']),
 					templates: {
@@ -266,7 +266,7 @@ jQuery(function($) {
 					}
 				}
 			);
-			this.$attendeeForm.find('#wowAgeClassWidget .typeahead').on('click', function() {
+			this.$attendeeForm.find('#wowAgeGroupWidget .typeahead').on('click', function() {
 			    var ev = $.Event('keydown');
 			    ev.keyCode = ev.which = 40;
 			    $(this).trigger(ev);
@@ -451,7 +451,7 @@ jQuery(function($) {
 			        }
 		  		}
 		  	);
-            this.$attendeeForm.find('#wowAgeClass')
+            this.$attendeeForm.find('#wowAgeGroup')
                 .on('keyup change blur', function() {
                     var $this = $(this);
                     validate.matchOne(['Adult', 'Teen'], $this.val(),
@@ -462,7 +462,7 @@ jQuery(function($) {
                             $this.val(matched);
                         },
                         function (error) {
-                            console.info('wowAgeClass: ' + error);
+                            console.info('wowAgeGroup: ' + error);
                             if($this.val().length===0) {
                                 validate.clearGlyphicon($this.parent());
                                 return;
@@ -570,7 +570,7 @@ jQuery(function($) {
                 // enforce all fields
                 problemWidgets = this.hasError([
                     '#wowFirstNameWidget', '#wowLastNameWidget', '#wowEmailWidget',
-                    '#wowPhoneWidget', '#wowAgeClassWidget', '#wowAddressWidget',
+                    '#wowPhoneWidget', '#wowAgeGroupWidget', '#wowAddressWidget',
                     '#wowZipCodeWidget', '#wowCityWidget', '#wowStateWidget',
                     '#wowShirtWidget'
                 ]);
@@ -579,7 +579,7 @@ jQuery(function($) {
                 // enforce just the core fields
                 problemWidgets = this.hasError([
                     '#wowFirstNameWidget', '#wowLastNameWidget', '#wowEmailWidget',
-                    '#wowAgeClassWidget', '#wowShirtWidget'
+                    '#wowAgeGroupWidget', '#wowShirtWidget'
                 ]);
             }
 
@@ -636,32 +636,32 @@ jQuery(function($) {
          * @param attendee
          */
         computeCost: function(attendee) {
-            var cost = 0, roomCost;
+            var totalAmt = 0, roomAmt;
             if(attendee.shirt === 'None') {
-                attendee.shirtCost = null;
+                attendee.shirtAmt = null;
             } else {
                 attendee.shirtSize = attendee.shirt.slice(0, attendee.shirt.length-3).trim();
-                attendee.shirtCost = parseInt(attendee.shirt.slice(-2));
-                cost += attendee.shirtCost;
+                attendee.shirtAmt = parseInt(attendee.shirt.slice(-2));
+                totalAmt += attendee.shirtAmt;
             }
             if(isNaN(parseInt(attendee.donation.slice(1).trim()))===false) {
-                attendee.donationCost = parseInt(attendee.donation.slice(1).trim());
-                cost += attendee.donationCost;
+                attendee.donationAmt = parseInt(attendee.donation.slice(1).trim());
+                totalAmt += attendee.donationAmt;
             } else {
-                attendee.donationCost = null;
+                attendee.donationAmt = null;
             }
 
             // get room cost here
-            roomCost = this.attendeeDb({attendeeId: attendee.attendeeId}).select('room');
-            cost += roomCost[0];
-            attendee.cost = cost;
+            roomAmt = this.attendeeDb({attendeeId: attendee.attendeeId}).select('roomAmt');
+            totalAmt += roomAmt[0];
+            attendee.totalAmt = totalAmt;
 
             this.attendeeDb({attendeeId: attendee.attendeeId})
                 .update({
-                    shirtCost: attendee.shirtCost,
+                    shirtAmt: attendee.shirtAmt,
                     shirtSize: attendee.shirtSize,
-                    donationCost: attendee.donationCost,
-                    cost: attendee.cost
+                    donationAmt: attendee.donationAmt,
+                    totalAmt: attendee.totalAmt
                 });
 
             return;
@@ -676,7 +676,7 @@ jQuery(function($) {
             }
 
             // update the cost per attendee according to how many attendees have registered
-            this.attendeeDb().update({room: roomCosts[n-1]});
+            this.attendeeDb().update({roomAmt: roomCosts[n-1]});
 
             // Once there are 4 in a room
             //     if one of the attendees is a teen,
@@ -684,7 +684,7 @@ jQuery(function($) {
             // If there are less than 4 in a room
             //     the teen is charged the regular price.
             if(n >= 4) {
-                this.attendeeDb({ageClass:'Teen'}).update({room: 60});
+                this.attendeeDb({ageGroup:'Teen'}).update({roomAmt: 60});
             }
          },
 
@@ -755,7 +755,7 @@ jQuery(function($) {
             ca.zip = this.$attendeeForm.find('#wowZipCode').val();
             ca.email = this.$attendeeForm.find('#wowEmail').val();
             ca.phone = this.$attendeeForm.find('#wowPhone').val();
-            ca.ageClass = this.$attendeeForm.find('#wowAgeClass').val();
+            ca.ageGroup = this.$attendeeForm.find('#wowAgeGroup').val();
             ca.donation = this.$attendeeForm.find('#wowDonation').val();
             ca.shirt = this.$attendeeForm.find('#wowShirt').val();
             ca.poc = (this.$attendeeForm.find('#wowPoc').val() === 'true');
@@ -932,7 +932,7 @@ jQuery(function($) {
 
             // touch every attendee and read the cost field, see computeCost.
             $.each(attendees, function (i, attendee) {
-                groupTotalCost += attendee.cost;
+                groupTotalCost += attendee.totalAmt;
             });
 
             var postData = {
@@ -978,7 +978,7 @@ jQuery(function($) {
 				city: attendee.city,
 				state: attendee.state,
 				shirt: attendee.shirt,
-				ageClass: attendee.ageClass,
+				ageGroup: attendee.ageGroup,
 				donation: attendee.donation,
 				poc: attendee.poc
 			}));
@@ -998,7 +998,7 @@ jQuery(function($) {
 
             if(attendees !== undefined) {
                 $.each(attendees, function (i, attendee) {
-                    groupTotalCost += attendee.cost;
+                    groupTotalCost += attendee.totalAmt;
                 });
                 if(groupTotalCost === 0) {
                     groupTotalCost = null;
