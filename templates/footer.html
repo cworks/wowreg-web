@@ -1,17 +1,9 @@
 <div id="footerForm" class="container">
-
-    <div class="row vertical-align">
-        <div class="col-md-2 pull-left"></div>
-        <div class="col-md-2"></div>
-        <div class="col-md-1"></div>
-        <div class="col-md-2"></div>
-        <div class="col-md-1"></div>
-        <div class="col-md-2"></div>
-        <div class="col-md-2">
-            <button id="payButton" type="button" class="btn btn-success btn-block">Pay</button>
+    <div class="row">
+        <div class='col-md-12'>
+            <button id="payButton" type="button" class="btn btn-primary">Pay</button>
         </div>
     </div>
-
 </div>
 <div class="container cworksinfo">
     <div class="row">
@@ -63,6 +55,27 @@
                     <div class="col-md-12 text-center">
                         <p>Whoopsie!</p>
                         <p>You haven't added attendees.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-info" data-dismiss="modal">Ok</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="wowWipDialog" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-vertical-align">
+        <div class="modal-content">
+            <div class="modal-body text-center">
+                <div class="row">
+                    <div class="col-md-12 text-center">
+                        <p>Whoopsie!</p>
+                        <p>There's an attendee in the form that's not yet added.</p>
+                        <p>Click 'Add Lady' to add attendee to group</p>
+                        <p>or</p>
+                        <p>Click 'Clear' to discard</p>
                     </div>
                 </div>
             </div>

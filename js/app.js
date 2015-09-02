@@ -30,14 +30,14 @@ jQuery(function($) {
 	var wowShirts = ['None', 'Small $12', 'Medium $12', 'Large $12', 'X-Large $12', 'XX-Large $15', 'XXX-Large $15'];
 
     /*
-     * Room w/ 1 - $185 /each
-     * Room w/ 2 - $115 /each
-     * Room w/ 3 - $95 /each
-     * Room w/ 4 - $85 /each
-     * Room w/ 5 - $85 /each
-     * Room w/ 6 - $85 /each
+     * Room w/ 1 - $185 /each, $195 PRICE CHANGE
+     * Room w/ 2 - $115 /each, $125
+     * Room w/ 3 - $95 /each,  $105
+     * Room w/ 4 - $85 /each,  $95
+     * Room w/ 5 - $85 /each,  $95
+     * Room w/ 6 - $85 /each,  $95
      */
-    var roomCosts = [185, 115, 95, 85, 85, 85];
+    var roomCosts = [195, 125, 105, 95, 95, 95];
 
 	var substringMatcher = function(strs) {
 		return function findMatches(q, cb) {
@@ -140,6 +140,10 @@ jQuery(function($) {
 			$element.parent('div.form-group').addClass('has-success'); 
 		};
 
+        var isSuccess = function($element) {
+            return $element.next('span.glyphicon').hasClass('glyphicon-ok');
+        };
+
 		var hasError = function($element) {
 			$element.next('span.glyphicon').removeClass('glyphicon-ok');
 			$element.parent('div.form-group').removeClass('has-success'); 
@@ -159,6 +163,7 @@ jQuery(function($) {
 			textInput : textInput,
 			matchOne : matchOne,
 			hasSuccess : hasSuccess,
+            isSuccess : isSuccess,
 			hasError : hasError,
 			clearGlyphicon : clearGlyphicon
 		};
@@ -225,7 +230,7 @@ jQuery(function($) {
 		 */
 		bindAttendeeFormEvents: function() {
 
-			this.$attendeeForm.find('#wowStateTypeahead .typeahead').typeahead({
+			this.$attendeeForm.find('#wowStateWidget .typeahead').typeahead({
 					hint: true,
 					highlight: true,
 					minLength: 1
@@ -243,7 +248,7 @@ jQuery(function($) {
 					}
 				}
 			);
-			this.$attendeeForm.find('#wowAgeClassTypeahead .typeahead').typeahead({
+			this.$attendeeForm.find('#wowAgeClassWidget .typeahead').typeahead({
 					hint: true,
 					highlight: true,
 					minLength: 0
@@ -261,13 +266,13 @@ jQuery(function($) {
 					}
 				}
 			);
-			this.$attendeeForm.find('#wowAgeClassTypeahead .typeahead').on('click', function() {
+			this.$attendeeForm.find('#wowAgeClassWidget .typeahead').on('click', function() {
 			    var ev = $.Event('keydown');
 			    ev.keyCode = ev.which = 40;
 			    $(this).trigger(ev);
 			    return true;
 			});
-			this.$attendeeForm.find('#wowShirtTypeahead .typeahead').typeahead({
+			this.$attendeeForm.find('#wowShirtWidget .typeahead').typeahead({
 					hint: true,
 					highlight: true,
 					minLength: 0
@@ -491,9 +496,7 @@ jQuery(function($) {
 
             $('#wowShirt').click(function(){
                 $(this).attr('placeholder','');
-            });
-
-            $('#wowShirt').focusout(function(){
+            }).focusout(function(){
                 $(this).attr('placeholder','Select One');
             });
 
@@ -505,6 +508,9 @@ jQuery(function($) {
 
 			this.$attendeeForm.find('#addAttendeeButton')
 				.on('click', this.addAttendee.bind(this));
+
+            this.$attendeeForm.find('#clearAttendeeButton')
+                .on('click', this.clearAttendee.bind(this));
 
 			this.$attendeeForm.find('#nextButton')
 				.on('click', this.nextAttendee.bind(this));
@@ -674,31 +680,42 @@ jQuery(function($) {
 
             // Once there are 4 in a room
             //     if one of the attendees is a teen,
-            //         the rate for each teen is $50.
+            //         the rate for each teen is $50. ($60) PRICE CHANGE
             // If there are less than 4 in a room
             //     the teen is charged the regular price.
             if(n >= 4) {
-                this.attendeeDb({ageClass:'Teen'}).update({room: 50});
+                this.attendeeDb({ageClass:'Teen'}).update({room: 60});
             }
          },
+
+        /*
+         * clear attendee form
+         */
+        clearAttendee: function() {
+            // before clear we check if we're clearing point-of-contact (poc) attendee
+            // if so we want to reset with poc set because poc needs to provide more reg info
+            var wowPoc = (this.$attendeeForm.find('#wowPoc').val() === 'true') ||
+                (this.$attendeeForm.find('#wowPoc').val() === true);
+            this.renderAttendeeForm({
+                poc: wowPoc
+            });
+        },
 
 		/*
 		 * create an attendee
 		 */
 		addAttendee: function() {
-
-            // If the button has changed purposes and this is called for some reason then we don't
-            // add an attendee because presumably the user is updating an attendee.
-            if(this.$attendeeForm.find('#addAttendeeButton').html() === 'Save') {
+            // If the button says Save then user is editing an attendee so
+            // we don't want to add a new record, thus we return.
+            if(this.$attendeeForm.find('#addAttendeeButton').html() === 'Update Lady') {
                 return;
             }
-
+            // business rules say no more than 6 attendees per group
             var n = this.attendeeDb().count();
             if(n >= 6) {
                 this.$footerSection.find('#attendeeLimitDialog').modal('show');
                 return;
             }
-
 			var attendee = this.attendeeFromForm(this.attendeeId);
             if(attendee.attendeeId === 1 || n === 0) {
                 attendee.poc = true;
@@ -757,8 +774,11 @@ jQuery(function($) {
             var attendee = this.attendeeDb({attendeeId: parseInt(attendeeId)}).first();
             // load attendee into attendeeForm
             this.renderAttendeeForm(attendee);
-            // change 'Add Lady' button to read: 'Save'
-            this.$attendeeForm.find('#addAttendeeButton').html('Save');
+            // change 'Add Lady' button to read: 'Update Lady'
+            this.$attendeeForm.find('#addAttendeeButton').html('Update Lady');
+            // hide clear button for edit scenarios
+            this.$attendeeForm.find('#clearAttendeeButton').hide();
+			this.$attendeeForm.find('#saveAttendeesButton').hide();
             // attach click listener to Save button
             var _self = this;
             this.$attendeeForm.find('#addAttendeeButton')
@@ -840,7 +860,7 @@ jQuery(function($) {
                 this.updateAttendee(curAttendee);
             }
 
-            if(this.$attendeeForm.find('#addAttendeeButton').html() === 'Save') {
+            if(this.$attendeeForm.find('#addAttendeeButton').html() === 'Update Lady') {
                 return;
             }
             this.renderAttendeeForm(curAttendee);
@@ -856,8 +876,11 @@ jQuery(function($) {
             if(n !== 1) {
                 console.error('removeAttendee: Could not remove attendee: ' + attendeeId);
             }
+            var wowPoc = this.attendeeDb().count() === 0;
             this.updateCosts();
-            this.renderAttendeeForm();
+            this.renderAttendeeForm({
+                poc: wowPoc
+            });
             this.renderAttendeeTable();
         },
 
@@ -871,6 +894,14 @@ jQuery(function($) {
 
             if(attendees === false || attendees === null || attendees === undefined || attendees.length === 0) {
                 this.$footerSection.find('#wowWhoopsieDialog').modal('show');
+                return;
+            }
+
+            var wip = validate.isSuccess(this.$attendeeForm.find('#wowFirstName')) ||
+                      validate.isSuccess(this.$attendeeForm.find('#wowLastName')) ||
+                      validate.isSuccess(this.$attendeeForm.find('#wowEmail'));
+            if(wip === true) {
+                this.$footerSection.find('#wowWipDialog').modal('show');
                 return;
             }
 
@@ -933,7 +964,6 @@ jQuery(function($) {
 		 * render the attendee form
 		 */
 		renderAttendeeForm: function(attendee) {
-
 			if(!attendee) {
 				attendee = {};
 			}
@@ -1028,7 +1058,7 @@ jQuery(function($) {
 		 */ 
 		render: function() {
 			this.$headerSection.html(this.headerSectionTemplate({
-				title: 'WoW Conference 2015!'
+				title: 'WoW Conference 2016!'
 			}));
 			this.renderAttendeeForm({poc:true});
 			this.renderAttendeeTable();

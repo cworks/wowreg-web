@@ -84,7 +84,7 @@ module.exports = function(grunt) {
                     collapseWhitespace: true,
                     collapseBooleanAttributes: true,
                     conservativeCollapse: true,
-                    removeAttributeQuotes: true,
+                    removeAttributeQuotes: false,
                     removeRedundantAttributes: true,
                     useShortDoctype: true,
                     removeEmptyAttributes: true
@@ -100,98 +100,42 @@ module.exports = function(grunt) {
 
         /*
          * Replace config - Used to replace references to fat home-grown
-         * Javascript code with slimer albeit uglier versions.
+         * Javascript code with slimmer albeit uglier versions.
          */
         replace: {
-            appMin: {
-                src: ['<%= dist %>/index.html'],
+            toMinifiedUrl: {
+                src: [
+                    '<%= dist %>/index.html',
+                    '<%= dist %>/thankyou.html',
+                    '<%= dist %>/cancelled.html'
+                ],
                 overwrite: true,
                 replacements: [
-                    {
-                        from: '<script src="js/app.js"></script>',
-                        to: '<script src="js/app.min.js"></script>'
-                    },
-                    {
-                        from: '<script src="js/templatize.js"></script>',
-                        to: '<script src="js/templatize.min.js"></script>'
-                    }
+                    { from: '<script src="js/app.js"></script>', to: '<script src="js/app.min.js"></script>' },
+                    { from: '<script src="js/thanksApp.js"></script>', to: '<script src="js/thanksApp.min.js"></script>' },
+                    { from: '<script src="js/cancelApp.js"></script>', to: '<script src="js/cancelApp.min.js"></script>' },
+                    { from: '<script src="js/templatize.js"></script>', to: '<script src="js/templatize.min.js"></script>' }
                 ]
             },
-            thanksAppMin: {
-                src: ['<%= dist %>/thankyou.html'],
+            siteUrl: {
+                src: [
+                    '<%= dist %>/templates/cancel.html',
+                    '<%= dist %>/templates/thanks.html'
+                ],
                 overwrite: true,
                 replacements: [
-                    {
-                        from: '<script src="js/thanksApp.js"></script>',
-                        to: '<script src="js/thanksApp.min.js"></script>'
-                    },
-                    {
-                        from: '<script src="js/templatize.js"></script>',
-                        to: '<script src="js/templatize.min.js"></script>'
-                    }
+                    { from: 'localhost', to: 'www.wowconf.org' }
                 ]
             },
-            cancelAppMin: {
-                src: ['<%= dist %>/cancelled.html'],
+            serviceUrl: {
+                src: [
+                    '<%= dist %>/js/app.js',
+                    '<%= dist %>/js/cancelApp.js',
+                    '<%= dist %>/js/thanksApp.js'
+                ],
                 overwrite: true,
                 replacements: [
-                    {
-                        from: '<script src="js/cancelApp.js"></script>',
-                        to: '<script src="js/cancelApp.min.js"></script>'
-                    },
-                    {
-                        from: '<script src="js/templatize.js"></script>',
-                        to: '<script src="js/templatize.min.js"></script>'
-                    }
-                ]
-            },
-            cancelTemplateUrl: {
-                src: ['<%= dist %>/templates/cancel.html'],
-                overwrite: true,
-                replacements: [
-                    {
-                        from: 'localhost',
-                        to: 'www.wowconf.org'
-                    }
-                ]
-            },
-            thanksTemplateUrl: {
-                src: ['<%= dist %>/templates/thanks.html'],
-                overwrite: true,
-                replacements: [
-                    {
-                        from: 'localhost',
-                        to: 'www.wowconf.org'
-                    }
-                ]
-            },
-            mainAppUrl: {
-                src: ['<%= dist %>/js/app.min.js'],
-                overwrite: true,
-                replacements: [
-                    {
-                        from: 'localhost:4040',
-                        to: 'www.wowconf.org'
-                    }
-                ]
-            },
-            thanksAppUrl: {
-                src: ['<%= dist %>/js/thanksApp.min.js'],
-                overwrite: true,
-                replacements: [
-                    {
-                        from: 'localhost:4040',
-                        to: 'www.wowconf.org'
-                    }
-                ]
-            },
-            cancelAppUrl: {
-                src: ['<%= dist %>/js/cancelApp.min.js'],
-                overwrite: true,
-                replacements: [
-                    {
-                        from: 'localhost:4040',
-                        to: 'www.wowconf.org'
+                    { from: 'localhost:4040', to: 'www.wowconf.org'
                     }
                 ]
             }
@@ -273,33 +217,39 @@ module.exports = function(grunt) {
      * Build order
      */
     grunt.registerTask('build', [
-        'clean',
-        'jshint',
-        'uglify',
-        'copy',
-        'replace:appMin',
-        'replace:thanksAppMin',
-        'replace:cancelAppMin',
-        'htmlmin'        
+        'dev'
     ]);
 
     /*
-     * Build order
+     * Build a plain and simple development webroot
      */
-    grunt.registerTask('prod', [
+    grunt.registerTask('dev', [
         'clean',
         'jshint',
+        'copy'
+    ]);
+
+    /*
+     * Extension of dev task that minimizes javascript & html and replaces
+     * references to original code with minimized code.
+     */
+    grunt.registerTask('devmin', [
+        'dev',
         'uglify',
-        'copy',
-        'replace:appMin',
-        'replace:thanksAppMin',
-        'replace:cancelAppMin',
-        'replace:cancelTemplateUrl',
-        'replace:thanksTemplateUrl',
-        'replace:mainAppUrl',
-        'replace:thanksAppUrl',
-        'replace:cancelAppUrl',
+        'replace:toMinifiedUrl',
         'htmlmin'
+    ]);
+
+    grunt.registerTask('prod', [
+        'dev',
+        'replace:siteUrl',
+        'replace:serviceUrl'
+    ]);
+
+    grunt.registerTask('prodmin', [
+        'devmin',
+        'replace:siteUrl',
+        'replace:serviceUrl'
     ]);
 
     // executed by just typing grunt on the command line
